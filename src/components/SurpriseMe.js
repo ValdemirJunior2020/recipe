@@ -1,70 +1,48 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { FaUtensils, FaIceCream } from 'react-icons/fa';
+import { FaSurprise } from 'react-icons/fa';
 
 function SurpriseMe() {
   const [recipe, setRecipe] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
+  const [image, setImage] = useState('');
   const [loading, setLoading] = useState(false);
 
   const fetchGeminiRecipe = async (type) => {
+    setLoading(true);
+    setRecipe('');
+    setImage('');
+
     try {
-      setLoading(true);
-      setRecipe('');
-      setImageUrl('');
+      const response = await axios.post('https://recipe-backend-h4b0.onrender.com/api/gemini', { type });
+      console.log('Backend response:', response.data);
 
-      const response = await axios.post(
-        'https://recipe-backend-h4b0.onrender.com/api/gemini',
-        { type }
-      );
-
-      console.log('Gemini response:', response.data);
       setRecipe(response.data.recipe);
-      setImageUrl(response.data.imageUrl);
+      setImage(response.data.imageUrl);
     } catch (error) {
-      console.error('Gemini error:', error);
-      setRecipe('Something went wrong. Try again later.');
-    } finally {
-      setLoading(false);
+      console.error('Gemini error:', error.response?.data || error.message);
+      setRecipe('Failed to fetch recipe. Please try again.');
     }
+
+    setLoading(false);
   };
 
   return (
-    <div className="card text-center my-4">
-      <div className="card-body">
-        <h5 className="card-title">🎲 Surprise Me</h5>
-        <p className="card-text">Let Gemini pick a random recipe for you</p>
-        <button
-          className="btn btn-primary mx-2"
-          onClick={() => fetchGeminiRecipe('european dish')}
-        >
-          <FaUtensils className="me-2" />
-          Surprise Me with European Dish
-        </button>
-        <button
-          className="btn btn-warning mx-2"
-          onClick={() => fetchGeminiRecipe('dessert')}
-        >
-          <FaIceCream className="me-2" />
-          Surprise Me with Dessert
-        </button>
+    <div className="text-center mt-5">
+      <h3><FaSurprise /> Surprise Me!</h3>
+      <p>Click one of the buttons below to get a random recipe:</p>
 
-        {loading && <p className="mt-3">Loading...</p>}
-
-        {recipe && (
-          <div className="mt-4">
-            <h6 className="fw-bold">🍽️ Gemini Recipe</h6>
-            <pre className="text-start bg-light p-3 rounded">{recipe}</pre>
-            {imageUrl && (
-              <img
-                src={imageUrl}
-                alt="Recipe"
-                className="img-fluid mt-3 rounded shadow"
-              />
-            )}
-          </div>
-        )}
+      <div className="d-flex justify-content-center gap-3 mb-4">
+        <button className="btn btn-primary" onClick={() => fetchGeminiRecipe('European dish')}>
+          🍝 Surprise Me with a Dish
+        </button>
+        <button className="btn btn-secondary" onClick={() => fetchGeminiRecipe('Dessert')}>
+          🍰 Surprise Me with a Dessert
+        </button>
       </div>
+
+      {loading && <p>Loading...</p>}
+      {image && <img src={image} alt="Dish" className="img-fluid rounded shadow mb-3" style={{ maxHeight: '300px' }} />}
+      {recipe && <pre className="text-start bg-light p-3 rounded">{recipe}</pre>}
     </div>
   );
 }
