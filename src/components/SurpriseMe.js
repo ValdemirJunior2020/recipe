@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { FaMagic, FaImage } from 'react-icons/fa';
+import { FaMagic } from 'react-icons/fa';
 
 const SurpriseMe = () => {
   const [recipeText, setRecipeText] = useState('');
@@ -18,29 +18,30 @@ const SurpriseMe = () => {
           ? 'Give me a random European dessert recipe with ingredients and instructions.'
           : 'Give me a random European dish recipe with ingredients and instructions.';
 
-      const response = await axios.post('https://recipe-backend-h4b0.onrender.com/api/gemini', {
+      const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/gemini`, {
         prompt,
       });
 
       console.log('Backend response:', response.data);
+
       const geminiText = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
       if (!geminiText) throw new Error('No recipe text returned from Gemini');
 
       setRecipeText(geminiText);
 
-      // Extract a title or first dish name from the text to search image
       const titleLine = geminiText.split('\n')[0];
       const query = titleLine.replace(/[^a-zA-Z0-9 ]/g, '').trim() || 'european food';
 
-      const imageResponse = await axios.get(
+      const imageRes = await axios.get(
         `https://www.googleapis.com/customsearch/v1?q=${query}&cx=${process.env.REACT_APP_GOOGLE_SEARCH_ENGINE_ID}&searchType=image&key=${process.env.REACT_APP_GOOGLE_SEARCH_KEY}`
       );
 
-      const imageUrl = imageResponse.data.items?.[0]?.link;
-      setRecipeImage(imageUrl);
+      const imageUrl = imageRes.data.items?.[0]?.link;
+      setRecipeImage(imageUrl || '');
     } catch (error) {
-      console.error('Gemini error:', error);
+      console.error('Gemini error:', error.response?.data || error.message);
       setRecipeText('Sorry, could not fetch a recipe. Try again.');
+      setRecipeImage('');
     } finally {
       setLoading(false);
     }
@@ -68,7 +69,6 @@ const SurpriseMe = () => {
 
       {recipeImage && (
         <div className="mt-4">
-          <FaImage className="mb-2" />
           <img
             src={recipeImage}
             alt="Recipe Visual"
